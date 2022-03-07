@@ -141,6 +141,7 @@ The linear model produces the lowest RMSE. Using this model allows for more cont
 The optimal K for the RMSE model is `r optimal_k$err[1]`
 
 ### Appendix
+Comparison of the RMSE for the each model 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 
 tab <- matrix(c(lm_rmse,knn_rmse), ncol=2, byrow=TRUE)
@@ -151,8 +152,8 @@ tab <- as.table(tab)
 tab
 
 ```
-Comparison of the RMSE for the each model 
 
+Regression output for linear model
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 lm_new

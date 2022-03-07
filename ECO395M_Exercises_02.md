@@ -29,14 +29,16 @@ them. In the linear model, I interacted living area with number of
 rooms,number of rooms with number of bedrooms, and bedrooms and
 bathrooms.
 
-The optimal K for the RMSE model is 5.466596^{4}
+The optimal K for the RMSE model is 6.8526252^{4}
 
 ### Appendix
 
-    ##      Linear_Model KNN_Model
-    ## RMSE     66519.74  54665.96
-
 Comparison of the RMSE for the each model
+
+    ##      Linear_Model KNN_Model
+    ## RMSE     65469.85  68526.25
+
+Regression output for linear model
 
     ## 
     ## Call:
@@ -46,17 +48,17 @@ Comparison of the RMSE for the each model
     ## 
     ## Coefficients:
     ##            (Intercept)                 lotSize                     age  
-    ##              36126.948               11500.386                  31.662  
+    ##              33335.039                9366.802                 107.516  
     ##             livingArea                bedrooms              fireplaces  
-    ##                 25.647               23739.504                4152.048  
+    ##                 17.165               26049.765                4499.091  
     ##              bathrooms                   rooms  heatinghot water/steam  
-    ##              21429.004                5075.901               -9337.009  
+    ##              31241.004                3648.282               -6946.544  
     ##        heatingelectric            fuelelectric                 fueloil  
-    ##                -15.775              -15449.269              -10743.925  
+    ##              -4197.492              -14006.549              -15400.110  
     ##           centralAirNo        livingArea:rooms          bedrooms:rooms  
-    ##             -19740.276                   7.861               -5047.548  
+    ##             -18911.530                   8.394               -4888.195  
     ##     bedrooms:bathrooms  
-    ##                 77.670
+    ##              -1492.570
 
 ## 3) Classification and retrospective sampling
 
@@ -64,8 +66,8 @@ Comparison of the RMSE for the each model
 
     ##    yhat
     ## y     0   1
-    ##   0 121  15
-    ##   1  44  20
+    ##   0 121   8
+    ##   1  59  12
 
     ## 
     ## Call:  glm(formula = Default ~ duration + amount + installment + age + 
@@ -73,17 +75,17 @@ Comparison of the RMSE for the each model
     ## 
     ## Coefficients:
     ##         (Intercept)             duration               amount  
-    ##          -0.3456265            0.0255723            0.0000825  
+    ##          -8.054e-01            2.872e-02            8.278e-05  
     ##         installment                  age          historypoor  
-    ##           0.1778595           -0.0238161           -1.1165329  
+    ##           1.834e-01           -1.419e-02           -1.171e+00  
     ##     historyterrible           purposeedu  purposegoods/repair  
-    ##          -1.8628303            0.7624718           -0.0108355  
+    ##          -1.874e+00            7.621e-01            5.510e-02  
     ##       purposenewcar       purposeusedcar        foreigngerman  
-    ##           0.8250028           -0.8771818           -1.0846379  
+    ##           7.250e-01           -9.387e-01           -9.039e-01  
     ## 
     ## Degrees of Freedom: 799 Total (i.e. Null);  788 Residual
-    ## Null Deviance:       970.5 
-    ## Residual Deviance: 849.9     AIC: 873.9
+    ## Null Deviance:       958 
+    ## Residual Deviance: 840.5     AIC: 864.5
 
 The bar plot along with the regression implies that the historypoor and
 historyterrible variables are negatively correlated with default
@@ -102,21 +104,21 @@ loan types.
 
     ##    yhat
     ## y      0
-    ##   0 8263
-    ##   1  737
+    ##   0 8297
+    ##   1  703
 
     ##    yhat
     ## y      0    1
-    ##   0 8155  108
-    ##   1  462  275
+    ##   0 8196  101
+    ##   1  457  246
 
     ##    yhat
     ## y      0    1
-    ##   0 8161  102
-    ##   1  463  274
+    ##   0 8198   99
+    ##   1  451  252
 
     ##                    baseline_1 baseline_2  my_model
-    ## Out_of_sample_prob  0.9181111  0.9366667 0.9372222
+    ## Out_of_sample_prob  0.9218889  0.9380000 0.9388889
 
 Using the confusion matrices to tabulate predicted vs actual class, I’m
 able to to measure out-of-sample accuracy for each model.
