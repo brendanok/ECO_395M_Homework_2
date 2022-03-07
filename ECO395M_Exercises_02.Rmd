@@ -84,10 +84,7 @@ rmse_val = do(100)*{
   c(r,lm_new_err = n,n-r)
 }
 
-colMeans(rmse_val)
-lm_rsme = mean(rmse_val[,'lm_new_err'])
-lm_new
-
+lm_rmse = mean(rmse_val[,'lm_new_err'])
 
 
 knn_saratoga_split = initial_split(SaratogaHouses, prop = 0.8)
@@ -135,25 +132,30 @@ saratoga_grid = foreach(k = k_grid, .combine='rbind') %dopar% {
 optimal_k = saratoga_grid %>% 
   filter(err == min(saratoga_grid$err))
 
-knn_rsme = optimal_k$err[1]
+knn_rmse = optimal_k$err[1]
 
 ```
 
 The linear model produces the lowest RMSE. Using this model allows for more control over variables and features as well as interactions between them. In the linear model, I interacted living area with number of rooms,number of rooms with number of bedrooms, and bedrooms and bathrooms.
 
-The optimal K for the RMSE model is `r `optimal_k$err[1]`
+The optimal K for the RMSE model is `r optimal_k$err[1]`
 
 ### Appendix
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 
-tab <- matrix(c(lm_rsme,knn_rsme), ncol=2, byrow=TRUE)
+tab <- matrix(c(lm_rmse,knn_rmse), ncol=2, byrow=TRUE)
 colnames(tab) <- c('Linear_Model','KNN_Model')
-rownames(tab) <- c('RSME')
+rownames(tab) <- c('RMSE')
 tab <- as.table(tab)
 
 tab
-lm_new
 
+```
+Comparison of the RMSE for the each model 
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+lm_new
 ```
 
 
@@ -267,11 +269,11 @@ ggplot(roc_curve_val) +
 
 ```
 
-### Model validation: step 2
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+<!-- ### Model validation: step 2 -->
+<!-- ```{r, echo=FALSE, warning=FALSE, message=FALSE} -->
 
-k_folds = 20
-hotels_val_f = hotels_val %>%
-  mutate(fold_id = rep(1:k_folds, length=nrow(hotels_val)) %>% sample)
+<!-- k_folds = 20 -->
+<!-- hotels_val_f = hotels_val %>% -->
+<!--   mutate(fold_id = rep(1:k_folds, length=nrow(hotels_val)) %>% sample) -->
 
-```
+<!-- ``` -->

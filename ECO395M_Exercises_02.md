@@ -23,41 +23,20 @@ students when holding hour of day and weekend status constant.
 
 ## 2) Saratoga house prices
 
-    ##         V1 lm_new_err         V3 
-    ## 67140.8771 66759.3901  -381.4869
-
-    ## 
-    ## Call:
-    ## lm(formula = price ~ . + (livingArea:rooms) + (rooms:bedrooms) + 
-    ##     (bedrooms:bathrooms) - pctCollege - sewer - waterfront - 
-    ##     landValue - newConstruction, data = saratoga_train)
-    ## 
-    ## Coefficients:
-    ##            (Intercept)                 lotSize                     age  
-    ##              32910.320                6851.146                  62.146  
-    ##             livingArea                bedrooms              fireplaces  
-    ##                 22.599               24488.450                4203.200  
-    ##              bathrooms                   rooms  heatinghot water/steam  
-    ##              23568.464                5013.722               -8348.707  
-    ##        heatingelectric            fuelelectric                 fueloil  
-    ##              -4187.640               -9614.104               -8497.324  
-    ##           centralAirNo        livingArea:rooms          bedrooms:rooms  
-    ##             -16755.637                   8.109               -5100.596  
-    ##     bedrooms:bathrooms  
-    ##                 47.415
-
 The linear model produces the lowest RMSE. Using this model allows for
 more control over variables and features as well as interactions between
 them. In the linear model, I interacted living area with number of
 rooms,number of rooms with number of bedrooms, and bedrooms and
 bathrooms.
 
-The optimal K for the RMSE model is `r`optimal_k$err\[1\]\`
+The optimal K for the RMSE model is 5.466596^{4}
 
 ### Appendix
 
     ##      Linear_Model KNN_Model
-    ## RSME     66759.39  62726.14
+    ## RMSE     66519.74  54665.96
+
+Comparison of the RMSE for the each model
 
     ## 
     ## Call:
@@ -67,26 +46,26 @@ The optimal K for the RMSE model is `r`optimal_k$err\[1\]\`
     ## 
     ## Coefficients:
     ##            (Intercept)                 lotSize                     age  
-    ##              32910.320                6851.146                  62.146  
+    ##              36126.948               11500.386                  31.662  
     ##             livingArea                bedrooms              fireplaces  
-    ##                 22.599               24488.450                4203.200  
+    ##                 25.647               23739.504                4152.048  
     ##              bathrooms                   rooms  heatinghot water/steam  
-    ##              23568.464                5013.722               -8348.707  
+    ##              21429.004                5075.901               -9337.009  
     ##        heatingelectric            fuelelectric                 fueloil  
-    ##              -4187.640               -9614.104               -8497.324  
+    ##                -15.775              -15449.269              -10743.925  
     ##           centralAirNo        livingArea:rooms          bedrooms:rooms  
-    ##             -16755.637                   8.109               -5100.596  
+    ##             -19740.276                   7.861               -5047.548  
     ##     bedrooms:bathrooms  
-    ##                 47.415
+    ##                 77.670
 
 ## 3) Classification and retrospective sampling
 
-![](ECO395M_Exercises_02_files/figure-markdown_github/unnamed-chunk-5-1.png)
+![](ECO395M_Exercises_02_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
     ##    yhat
     ## y     0   1
-    ##   0 133   8
-    ##   1  47  12
+    ##   0 121  15
+    ##   1  44  20
 
     ## 
     ## Call:  glm(formula = Default ~ duration + amount + installment + age + 
@@ -94,17 +73,17 @@ The optimal K for the RMSE model is `r`optimal_k$err\[1\]\`
     ## 
     ## Coefficients:
     ##         (Intercept)             duration               amount  
-    ##          -8.583e-01            3.002e-02            8.587e-05  
+    ##          -0.3456265            0.0255723            0.0000825  
     ##         installment                  age          historypoor  
-    ##           2.255e-01           -1.691e-02           -1.054e+00  
+    ##           0.1778595           -0.0238161           -1.1165329  
     ##     historyterrible           purposeedu  purposegoods/repair  
-    ##          -1.817e+00            5.426e-01            2.520e-02  
+    ##          -1.8628303            0.7624718           -0.0108355  
     ##       purposenewcar       purposeusedcar        foreigngerman  
-    ##           6.783e-01           -1.082e+00           -1.060e+00  
+    ##           0.8250028           -0.8771818           -1.0846379  
     ## 
     ## Degrees of Freedom: 799 Total (i.e. Null);  788 Residual
-    ## Null Deviance:       979.1 
-    ## Residual Deviance: 856.6     AIC: 880.6
+    ## Null Deviance:       970.5 
+    ## Residual Deviance: 849.9     AIC: 873.9
 
 The bar plot along with the regression implies that the historypoor and
 historyterrible variables are negatively correlated with default
@@ -128,22 +107,27 @@ loan types.
 
     ##    yhat
     ## y      0    1
-    ##   0 8147  116
-    ##   1  481  256
+    ##   0 8155  108
+    ##   1  462  275
 
     ##    yhat
     ## y      0    1
-    ##   0 8155  108
-    ##   1  480  257
+    ##   0 8161  102
+    ##   1  463  274
 
     ##                    baseline_1 baseline_2  my_model
-    ## Out_of_sample_prob  0.9181111  0.9336667 0.9346667
+    ## Out_of_sample_prob  0.9181111  0.9366667 0.9372222
 
 Using the confusion matrices to tabulate predicted vs actual class, I’m
 able to to measure out-of-sample accuracy for each model.
 
 ### Model validation: step 1
 
-![](ECO395M_Exercises_02_files/figure-markdown_github/unnamed-chunk-8-1.png)
+![](ECO395M_Exercises_02_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
-### Model validation: step 2
+<!-- ### Model validation: step 2 -->
+<!-- ```{r, echo=FALSE, warning=FALSE, message=FALSE} -->
+<!-- k_folds = 20 -->
+<!-- hotels_val_f = hotels_val %>% -->
+<!--   mutate(fold_id = rep(1:k_folds, length=nrow(hotels_val)) %>% sample) -->
+<!-- ``` -->
