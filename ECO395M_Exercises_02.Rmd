@@ -1,0 +1,277 @@
+---
+title: "ECO395M Exercises 02"
+author: "Brendan Ok"
+date: ""
+output:
+  md_document:
+    variant: markdown_github
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(mosaic)
+library(dplyr)
+library(ggplot2)
+library(caret)
+library(modelr)
+library(foreach)
+library(rsample)
+```
+
+## 1) Visualization
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+capmetro = read.csv("capmetro_UT.csv")
+# Recode the categorical variables in sensible, rather than alphabetical, order
+capmetro = mutate(capmetro,
+               day_of_week = factor(day_of_week,
+                 levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")),
+               month = factor(month,
+                 levels=c("Sep", "Oct","Nov")))
+
+
+capmetro_hours = capmetro %>%
+  group_by(hour_of_day, day_of_week, month) %>%
+  summarize(avg_boardings = mean(boarding), .groups = 'drop')
+
+
+ggplot(capmetro_hours) + 
+  geom_line(aes(x=factor(hour_of_day), y=avg_boardings, group=month, color=month)) + 
+  facet_wrap(~day_of_week)+
+  labs(title = "Average Boardings",
+       caption = "During all weekdays, the average number of people boarding increases until it peaks at around 4 o'clock. On weekends, people aren't getting on much at any point of the day.")
+
+```
+
+The hour of peak boarding times seem to stay constant day to day, month to month. 
+
+During Mondays in September, average boarding looks lower compared to other days and months. One possible reason for this is that weather in September 2018 was more pleasant than the colder October and November months. This may have incentivized people to go out more on Sundays rendering it difficult to get up on Monday mornings to go to work. 
+
+Wednesday, Thursday, Friday look lower in November because the week of Thanksgiving break (November 21-23 in 2018) may have lowered the averages down for the rest of the month because a lot of students and others would be going back to home. 
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(capmetro) +
+  geom_point(aes(x=temperature, y= boarding, color = weekend)) +
+  facet_wrap(~hour_of_day)+
+  labs(title="Boardings and Temperature",
+       caption="This scatter plot shows the total bus boardings in each 15 minute window at the recorded temperature during that window. Each facet in the graph represents the hour of the day in 24-hour time.")
+
+```
+
+Temperature seems to not have a noticeable effect on ridership among UT students when holding hour of day and weekend status constant.
+
+
+## 2) Saratoga house prices
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+data(SaratogaHouses)
+
+rmse_val = do(100)*{
+  saratoga_split = initial_split(SaratogaHouses, prop = 0.8)
+  saratoga_train = training(saratoga_split)
+  saratoga_test = testing(saratoga_split)
+  
+  lm2 = lm(price ~ . - pctCollege - sewer - waterfront - landValue - newConstruction, data=saratoga_train)
+  lm_new = lm(price ~ . + (livingArea:rooms) + (rooms:bedrooms) + (bedrooms:bathrooms) - pctCollege - sewer - waterfront - landValue - newConstruction, data=saratoga_train)
+  
+  r = rmse(lm2, saratoga_test)
+  n = rmse(lm_new, saratoga_test)
+  c(r,lm_new_err = n,n-r)
+}
+
+colMeans(rmse_val)
+lm_rsme = mean(rmse_val[,'lm_new_err'])
+lm_new
+
+
+
+knn_saratoga_split = initial_split(SaratogaHouses, prop = 0.8)
+knn_saratoga_train = training(knn_saratoga_split)
+knn_saratoga_test = testing(knn_saratoga_split)
+
+Xtrain = model.matrix(~ . - price - sewer - waterfront - newConstruction - heating - fuel - centralAir - 1, data=knn_saratoga_train)
+Xtest = model.matrix(~ . - price - sewer - waterfront - newConstruction - heating - fuel - centralAir - 1, data=knn_saratoga_test)
+
+# now rescale:
+scale_train = apply(Xtrain, 2, sd) # calculate std dev for each column
+Xtilde_train = scale(Xtrain, scale = scale_train)
+Xtilde_test = scale(Xtest, scale = scale_train)
+
+df_test = data.frame(
+  price = knn_saratoga_test$price,
+  Xtilde_test,
+  heating = knn_saratoga_test$heating,
+  fuel = knn_saratoga_test$fuel,
+  sewer = knn_saratoga_test$sewer,
+  waterfront = knn_saratoga_test$waterfront,
+  newConstruction = knn_saratoga_test$newConstruction,
+  centralAir = knn_saratoga_test$centralAir
+  )
+
+df_train = data.frame(
+  price = knn_saratoga_train$price,
+  Xtilde_train,
+  heating = knn_saratoga_train$heating,
+  fuel = knn_saratoga_train$fuel,
+  sewer = knn_saratoga_train$sewer,
+  waterfront = knn_saratoga_train$waterfront,
+  newConstruction = knn_saratoga_train$newConstruction,
+  centralAir = knn_saratoga_train$centralAir
+)
+
+k_grid = c(2:250)
+saratoga_grid = foreach(k = k_grid, .combine='rbind') %dopar% {
+  knn = knnreg(price ~ . - pctCollege - sewer - waterfront - landValue - newConstruction, k=k, data=df_train)
+  r = rmse(knn, data = df_test) 
+  c(k=k,err = r)
+} %>% as.data.frame
+
+
+optimal_k = saratoga_grid %>% 
+  filter(err == min(saratoga_grid$err))
+
+knn_rsme = optimal_k$err[1]
+
+```
+
+The linear model produces the lowest RMSE. Using this model allows for more control over variables and features as well as interactions between them. In the linear model, I interacted living area with number of rooms,number of rooms with number of bedrooms, and bedrooms and bathrooms.
+
+The optimal K for the RMSE model is `r `optimal_k$err[1]`
+
+### Appendix
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+tab <- matrix(c(lm_rsme,knn_rsme), ncol=2, byrow=TRUE)
+colnames(tab) <- c('Linear_Model','KNN_Model')
+rownames(tab) <- c('RSME')
+tab <- as.table(tab)
+
+tab
+lm_new
+
+```
+
+
+## 3) Classification and retrospective sampling
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+german_credit = read.csv("german_credit.csv")
+
+history = table(german_credit$history, german_credit$Default)
+history = prop.table(history, 1)
+
+history_default = data.frame(
+  probability_default = c(history[1,2],history[2,2],history[3,2]),
+  credit_history = c("good","poor","terrible")
+)
+
+ggplot(history_default) +
+  geom_col(aes(x=credit_history, y=probability_default))
+
+```
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+credit_split = initial_split(german_credit, prop = 0.8)
+credit_train = training(credit_split)
+credit_test = testing(credit_split)
+
+german_credit_logit = glm(Default ~ duration + amount + installment + age + history + purpose + foreign, data = credit_train, family="binomial")
+
+phat_test_logit_credit = predict(german_credit_logit, credit_test, type='response')
+yhat_test_logit_credit = ifelse(phat_test_logit_credit > 0.5, 1, 0)
+confusion_out_logit = table(y = credit_test$Default,
+                            yhat = yhat_test_logit_credit)
+confusion_out_logit
+
+german_credit_logit
+
+
+```
+
+The bar plot along with the regression implies that the historypoor and historyterrible variables are negatively correlated with default probability which doesn't make a lot of sense. Given that a big majority of the sample are "poor" or "terrible" credit scores, history isn't a good variable to use in this dataset to predict "high" or "low" probability of default. And since the bank looked for similar types of loans that caused defaults this dataset would be looking for probability of defaulting among loans that are already biased towards defaulting in the first place. So, they should sample a random or bigger variety of loan types.
+
+
+
+## 4) Children and hotel reservations
+
+### Model building
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+hotels_dev = read.csv("hotels_dev.csv")
+
+hotels_split = initial_split(hotels_dev, prop = 0.8)
+hotels_train = training(hotels_split)
+hotels_test = testing(hotels_split)
+
+baseline_1 = lm(children ~ market_segment + adults + customer_type + is_repeated_guest, data=hotels_train)
+baseline_2 = lm(children ~ . - arrival_date, data=hotels_train)
+best_m = lm(children ~ . + (average_daily_rate:total_of_special_requests)+ (average_daily_rate:customer_type) + (total_of_special_requests:adults) + (total_of_special_requests:customer_type) - arrival_date, data = hotels_train)
+
+phat_test_baseline1 = predict(baseline_1, hotels_test)
+yhat_test_baseline1 = ifelse(phat_test_baseline1 > 0.5, 1, 0)
+baseline1_out = table(y = hotels_test$children, yhat = yhat_test_baseline1)
+
+
+phat_test_baseline2 = predict(baseline_2, hotels_test)
+yhat_test_baseline2 = ifelse(phat_test_baseline2 > 0.5, 1, 0)
+baseline2_out = table(y = hotels_test$children, yhat = yhat_test_baseline2)
+
+phat_test_best = predict(best_m, hotels_test)
+yhat_test_best = ifelse(phat_test_best > 0.5, 1, 0)
+best_out = table(y = hotels_test$children, yhat = yhat_test_best)
+
+baseline1_out
+baseline2_out
+best_out
+
+
+arr_probs = c(sum(diag(baseline1_out))/sum(baseline1_out),sum(diag(baseline2_out))/sum(baseline2_out),sum(diag(best_out))/sum(best_out))
+
+tabl_ <- matrix(arr_probs, ncol=3, byrow=TRUE)
+colnames(tabl_) <- c("baseline_1","baseline_2","my_model")
+rownames(tabl_) <- c('Out_of_sample_prob')
+tabl_ <- as.table(tabl_)
+tabl_
+
+```
+
+Using the confusion matrices to tabulate predicted vs actual class, I'm able to to measure out-of-sample accuracy for each model.
+
+### Model validation: step 1
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+hotels_val = read.csv("hotels_val.csv")
+
+phat_test_val = predict(best_m, hotels_val, type='response')
+
+thresh_grid = seq(0.95, 0.05, by=-0.005)
+roc_curve_val = foreach(thresh = thresh_grid, .combine='rbind') %do% {
+  yhat_test_linear_val = ifelse(phat_test_val >= thresh, 1, 0)
+  # FPR, TPR for linear model
+  confusion_out_val = table(y = hotels_val$children, yhat = yhat_test_linear_val)
+  out_val = data.frame(model = "linear",
+                       TPR = confusion_out_val[2,2]/sum(hotels_val$children==1),
+                       FPR = confusion_out_val[1,2]/sum(hotels_val$children==0))
+
+  rbind(out_val)
+} %>% as.data.frame()
+ggplot(roc_curve_val) + 
+  geom_line(aes(x=FPR, y=TPR, color=model)) + 
+  labs(title="ROC curve: Best Model") +
+  theme_bw(base_size = 10)
+
+```
+
+### Model validation: step 2
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+k_folds = 20
+hotels_val_f = hotels_val %>%
+  mutate(fold_id = rep(1:k_folds, length=nrow(hotels_val)) %>% sample)
+
+```
